@@ -1,7 +1,7 @@
 {
   "$GMRoom":"v1",
   "%Name":"room_ex_church",
-  "creationCodeFile":"",
+  "creationCodeFile":"rooms/room_ex_church/RoomCreationCode.gml",
   "inheritCode":false,
   "inheritCreationOrder":false,
   "inheritLayers":false,
@@ -88,6 +88,7 @@
     {"name":"inst_35FEDD9D","path":"rooms/room_ex_church/room_ex_church.yy",},
     {"name":"inst_20D152D","path":"rooms/room_ex_church/room_ex_church.yy",},
     {"name":"inst_6606F3A7","path":"rooms/room_ex_church/room_ex_church.yy",},
+    {"name":"inst_5D2C6C6","path":"rooms/room_ex_church/room_ex_church.yy",},
   ],
   "isDnd":false,
   "layers":[
@@ -214,6 +215,7 @@
         {"$GMRInstance":"v4","%Name":"inst_6606F3A7","colour":4294967295,"frozen":false,"hasCreationCode":false,"ignore":false,"imageIndex":0,"imageSpeed":1.0,"inheritCode":false,"inheritedItemId":null,"inheritItemSettings":false,"isDnd":false,"name":"inst_6606F3A7","objectId":{"name":"o_dev_border","path":"objects/o_dev_border/o_dev_border.yy",},"properties":[
             {"$GMOverriddenProperty":"v1","%Name":"","name":"","objectId":{"name":"o_dev_border","path":"objects/o_dev_border/o_dev_border.yy",},"propertyId":{"name":"_border_name","path":"objects/o_dev_border/o_dev_border.yy",},"resourceType":"GMOverriddenProperty","resourceVersion":"2.0","value":"ex_border_church",},
           ],"resourceType":"GMRInstance","resourceVersion":"2.0","rotation":0.0,"scaleX":1.0,"scaleY":1.0,"x":60.0,"y":-20.0,},
+        {"$GMRInstance":"v4","%Name":"inst_5D2C6C6","colour":4294967295,"frozen":false,"hasCreationCode":true,"ignore":false,"imageIndex":0,"imageSpeed":1.0,"inheritCode":false,"inheritedItemId":null,"inheritItemSettings":false,"isDnd":false,"name":"inst_5D2C6C6","objectId":{"name":"o_ow_sign","path":"objects/o_ow_sign/o_ow_sign.yy",},"properties":[],"resourceType":"GMRInstance","resourceVersion":"2.0","rotation":0.0,"scaleX":1.0,"scaleY":1.0,"x":850.0,"y":480.0,},
       ],"layers":[],"name":"Instances","properties":[],"resourceType":"GMRInstanceLayer","resourceVersion":"2.0","userdefinedDepth":false,"visible":true,},
     {"$GMRAssetLayer":"","%Name":"lighting_overlay_stairs","assets":[
         {"$GMRSpriteGraphic":"v1","%Name":"graphic_9651CF","animationSpeed":1.0,"colour":4294967295,"frozen":false,"headPosition":0.0,"ignore":false,"inheritedItemId":null,"inheritItemSettings":false,"name":"graphic_9651CF","resourceType":"GMRSpriteGraphic","resourceVersion":"2.0","rotation":0.0,"scaleX":1.0,"scaleY":1.0,"spriteId":{"name":"spr_ex_ow_church_starirs_overlay","path":"sprites/spr_ex_ow_church_starirs_overlay/spr_ex_ow_church_starirs_overlay.yy",},"x":340.0,"y":220.0,},
@@ -243,8 +245,9 @@
       ],"depth":400,"effectEnabled":true,"effectType":null,"gridX":20,"gridY":20,"hierarchyFrozen":false,"inheritLayerDepth":false,"inheritLayerSettings":false,"inheritSubLayers":true,"inheritVisibility":true,"layers":[],"name":"lighting_overlay_stairs","properties":[],"resourceType":"GMRAssetLayer","resourceVersion":"2.0","userdefinedDepth":false,"visible":false,},
     {"$GMRLayer":"","%Name":"tiles","depth":500,"effectEnabled":true,"effectType":null,"gridX":20,"gridY":20,"hierarchyFrozen":false,"inheritLayerDepth":false,"inheritLayerSettings":false,"inheritSubLayers":true,"inheritVisibility":true,"layers":[
         {"$GMRTileLayer":"","%Name":"tile_library_trans","depth":600,"effectEnabled":true,"effectType":null,"gridX":20,"gridY":20,"hierarchyFrozen":false,"inheritLayerDepth":false,"inheritLayerSettings":false,"inheritSubLayers":true,"inheritVisibility":true,"layers":[],"name":"tile_library_trans","properties":[],"resourceType":"GMRTileLayer","resourceVersion":"2.0","tiles":{"SerialiseHeight":43,"SerialiseWidth":82,"TileCompressedData":[
-              -416,-2147483648,1,231,-81,-2147483648,-2,231,-80,-2147483648,-2,231,-80,-2147483648,-2,231,-2285,-2147483648,
-              3,216,208,211,-80,-2147483648,2,206,182,-81,-2147483648,1,220,-410,-2147483648,
+              -416,-2147483648,1,231,-81,-2147483648,-2,231,-80,-2147483648,-2,231,-80,-2147483648,-2,231,-596,-2147483648,
+              1,231,-81,-2147483648,-2,231,-241,-2147483648,1,231,-166,-2147483648,1,231,-1196,-2147483648,3,216,208,
+              211,-80,-2147483648,2,206,182,-81,-2147483648,1,220,-410,-2147483648,
             ],"TileDataFormat":1,},"tilesetId":{"name":"tile_ex_church_library","path":"tilesets/tile_ex_church_library/tile_ex_church_library.yy",},"userdefinedDepth":false,"visible":true,"x":0,"y":0,},
         {"$GMRTileLayer":"","%Name":"tile_cloth","depth":700,"effectEnabled":true,"effectType":null,"gridX":20,"gridY":20,"hierarchyFrozen":false,"inheritLayerDepth":false,"inheritLayerSettings":false,"inheritSubLayers":true,"inheritVisibility":true,"layers":[],"name":"tile_cloth","properties":[],"resourceType":"GMRTileLayer","resourceVersion":"2.0","tiles":{"SerialiseHeight":43,"SerialiseWidth":82,"TileCompressedData":[
               -744,-2147483648,-8,0,-74,-2147483648,-8,0,-74,-2147483648,-8,0,-74,-2147483648,-8,0,-74,-2147483648,

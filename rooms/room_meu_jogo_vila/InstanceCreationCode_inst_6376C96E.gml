@@ -1,0 +1,1 @@
+text = "{box_pos(true)}{col(y)}* Bem-vindo à praça de teste.{col(w)}{p}{e}";
