@@ -15,6 +15,7 @@
     {"name":"inst_7D1F0FB8","path":"rooms/room_meu_jogo_vila/room_meu_jogo_vila.yy",},
     {"name":"inst_65A349D3","path":"rooms/room_meu_jogo_vila/room_meu_jogo_vila.yy",},
     {"name":"inst_59BC0694","path":"rooms/room_meu_jogo_vila/room_meu_jogo_vila.yy",},
+    {"name":"inst_625ADCFE","path":"rooms/room_meu_jogo_vila/room_meu_jogo_vila.yy",},
   ],
   "isDnd":false,
   "layers":[
@@ -36,6 +37,9 @@
         {"$GMRInstance":"v4","%Name":"inst_7D1F0FB8","colour":4294967295,"frozen":false,"hasCreationCode":true,"ignore":false,"imageIndex":0,"imageSpeed":1.0,"inheritCode":false,"inheritedItemId":null,"inheritItemSettings":false,"isDnd":false,"name":"inst_7D1F0FB8","objectId":{"name":"o_ow_npc","path":"objects/o_ow_npc/o_ow_npc.yy",},"properties":[],"resourceType":"GMRInstance","resourceVersion":"2.0","rotation":0.0,"scaleX":1.0,"scaleY":1.0,"x":608.0,"y":352.0,},
         {"$GMRInstance":"v4","%Name":"inst_65A349D3","colour":4294967295,"frozen":false,"hasCreationCode":true,"ignore":false,"imageIndex":0,"imageSpeed":1.0,"inheritCode":false,"inheritedItemId":null,"inheritItemSettings":false,"isDnd":false,"name":"inst_65A349D3","objectId":{"name":"o_trigger","path":"objects/o_trigger/o_trigger.yy",},"properties":[],"resourceType":"GMRInstance","resourceVersion":"2.0","rotation":0.0,"scaleX":1.0,"scaleY":1.0,"x":768.0,"y":448.0,},
         {"$GMRInstance":"v4","%Name":"inst_59BC0694","colour":4294967295,"frozen":false,"hasCreationCode":true,"ignore":false,"imageIndex":0,"imageSpeed":1.0,"inheritCode":false,"inheritedItemId":null,"inheritItemSettings":false,"isDnd":false,"name":"inst_59BC0694","objectId":{"name":"o_trigger","path":"objects/o_trigger/o_trigger.yy",},"properties":[],"resourceType":"GMRInstance","resourceVersion":"2.0","rotation":0.0,"scaleX":1.0,"scaleY":1.0,"x":512.0,"y":352.0,},
+        {"$GMRInstance":"v4","%Name":"inst_625ADCFE","colour":4294967295,"frozen":false,"hasCreationCode":false,"ignore":false,"imageIndex":0,"imageSpeed":1.0,"inheritCode":false,"inheritedItemId":null,"inheritItemSettings":false,"isDnd":false,"name":"inst_625ADCFE","objectId":{"name":"o_actor_e","path":"objects/o_actor_e/o_actor_e.yy",},"properties":[
+            {"$GMOverriddenProperty":"v1","%Name":"","name":"","objectId":{"name":"o_actor_e","path":"objects/o_actor_e/o_actor_e.yy",},"propertyId":{"name":"encounter","path":"objects/o_actor_e/o_actor_e.yy",},"resourceType":"GMOverriddenProperty","resourceVersion":"2.0","value":"new rpg_enc_set_sonso()",},
+          ],"resourceType":"GMRInstance","resourceVersion":"2.0","rotation":0.0,"scaleX":1.0,"scaleY":1.0,"x":480.0,"y":352.0,},
       ],"layers":[],"name":"Instances","properties":[],"resourceType":"GMRInstanceLayer","resourceVersion":"2.0","userdefinedDepth":false,"visible":true,},
     {"$GMRBackgroundLayer":"","%Name":"Background","animationFPS":15.0,"animationSpeedType":0,"colour":4278190080,"depth":200,"effectEnabled":true,"effectType":null,"gridX":32,"gridY":32,"hierarchyFrozen":false,"hspeed":0.0,"htiled":false,"inheritLayerDepth":false,"inheritLayerSettings":false,"inheritSubLayers":true,"inheritVisibility":true,"layers":[],"name":"Background","properties":[],"resourceType":"GMRBackgroundLayer","resourceVersion":"2.0","spriteId":null,"stretch":false,"userdefinedAnimFPS":false,"userdefinedDepth":false,"visible":true,"vspeed":0.0,"vtiled":false,"x":0,"y":0,},
   ],

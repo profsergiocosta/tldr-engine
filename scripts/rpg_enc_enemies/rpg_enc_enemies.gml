@@ -1,71 +1,86 @@
-function ex_enemy_dustling() : enemy() constructor {
-    name = "Dustling"
-    obj  = o_actor_e_virovirokun
+function rpg_enemy_sonso() : enemy() constructor {
+    name = "Sonso"
+    obj  = o_actor_e          // ator genérico da engine; serve perfeitamente
 
-    hp     = 20
-    max_hp = 20
-    attack = 4
+    // stats
+    hp      = 60
+    max_hp  = 60              // atenção ao underline: maxhp NÃO existe
+    attack  = 4
     defense = 1
-    // element = ELEMENT.NONE     ← removido, campo é opcional (default undefined)
-    carrying_money = 15
+    carrying_money = 12
 
-    mercy = 0
-    can_spare = function() { return mercy >= 100 }
-    no_mercy_text = "* (Não está pronto para ser poupado ainda.)"
+    // sprites (já existem no projeto)
+    s_idle  = spr_ex_e_tasque
+    s_hurt  = spr_ex_e_tasque_hurt
+    s_spare = spr_ex_e_tasque_spared
 
-    dialogue = function(slot) {
-        if o_enc.turn_count == 0
-            return "* Um Dustling te encara, nervoso."
-        return choose(
-            "* O Dustling treme.",
-            "* O Dustling parece querer sair dali."
-        )
-    }
+	humor    = "sonso"     // "sonso" | "irritado" | "curioso"
+    chamados = 0           // quantas vezes o jogador insistiu em chamar
+	
+    dialogue = method(self, function() {
+        switch humor {
+            case "irritado":
+                return "* O Sonso bufa. As orelhas estão pra trás."
 
-    // sprites — trio confirmado no guia
-    s_idle  = spr_e_virovirokun_idle
-    s_hurt  = spr_e_virovirokun_hurt
-    s_spare = spr_e_virovirokun_spare
+            case "curioso":
+                return "* O Sonso finge olhar pro outro lado.";
 
-    acts = [
+            default:
+                if o_enc.turn_count == 0
+                    return "* Um gato te encara. Ele não parece impressionado."
+
+                return choose(
+                    "* O Sonso lambe a pata.",
+                    "* O Sonso boceja.",
+                    "* O Sonso não faz nada. De propósito."
+                )
+        }
+    })
+	
+	    acts = [
         {
-            name: "Check",
-            desc: "Dustling. Ataque 4, Defesa 1. Parece assustado.",
+            name: "Checar",
+            desc: "Análise inútil",
             party: [],
-            tp_cost: 0,
-            enabled: true,
-            exec: function(enemy_slot, user_index) {}
+            exec: function(slot, user) {
+                encounter_scene_dialogue(
+                    "* SONSO - ATK 4 DEF 1{br}{resetx}"
+                  + "* Gato de rua. Decide sozinho de quem ele gosta.{br}{resetx}"
+                  + "* Detesta ser chamado."
+                )
+            }
         },
         {
-            name: "Acalmar",
-            desc: "Fala com calma pro Dustling relaxar.",
+            name: "Chamar",
+            desc: "Psiu, psiu, psiu",
             party: [],
-            tp_cost: 0,
-            enabled: true,
-            exec: function(enemy_slot, user_index) {
-                enc_enemy_add_spare(enemy_slot, 60)
+            exec: function(slot, user) {
+                var me = o_enc.encounter_data.enemies[slot]
+                me.chamados ++
+                me.humor = "irritado"
+
+                audio_play(snd_ui_cant_select)
+
+                if me.chamados == 1
+                    encounter_scene_dialogue("* " + party_getname(user) + " chamou o Sonso.{br}{resetx}* Ele virou as costas.")
+                else
+                    encounter_scene_dialogue("* " + party_getname(user) + " chamou de novo.{br}{resetx}* Agora ele está OFENDIDO.")
+            }
+        },
+        {
+            name: "Ignorar",
+            desc: "Olhar fixamente para qualquer outra coisa",
+            party: [],
+            exec: function(slot, user) {
+                var me = o_enc.encounter_data.enemies[slot]
+                me.humor = "curioso"
+
+                enc_enemy_add_spare(slot, 50)   // metade da barra de MERCY
+
+                encounter_scene_dialogue("* " + party_getname(user) + " olhou fixamente para o nada.{br}{resetx}* O Sonso deu um passo na sua direção.")
             }
         }
     ]
 
-    turn_object = o_turn_default   // confirmado no guia
-    recruit = new enemy_recruit()
-
-    ev_hurt = function(dmg) {}
-    ev_win = function() {}
-}
-
-
-function ex_enc_set_dustling() : enc_set() constructor {
-    debug_name = "dustling_tutorial"
-    enemies = [ new ex_enemy_dustling() ]
-
-    flavor = function() {
-        if o_enc.turn_count == 0
-            return "* Um encontro tímido."
-        return "* O Dustling ainda está ali."
-    }
-
-    enemies_pos = [ [0, 0, true] ]
-    bgm = mus_ex_spawn
+    turn_object = o_turn_default   // por enquanto: uma bala parada
 }

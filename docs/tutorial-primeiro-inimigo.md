@@ -1,3 +1,12 @@
+---
+title: Criando o SONSO — um inimigo do zero
+tags:
+  - tldr-engine
+  - gamemaker
+  - combate
+  - tutorial
+---
+
 # Tutorial passo a passo: criando o SONSO, um inimigo do zero
 
 > Do arquivo vazio até uma luta jogável, em nove passos. Cada passo termina com algo **testável** — você nunca escreve mais de 20 linhas sem rodar o jogo.
@@ -180,7 +189,41 @@ O `flavor` do encontro também pode reagir. Volte no `enc_set()` e troque a stri
 
 ## Passo 5 — Os ACTs: o enigma
 
-Aqui mora a personagem. Três ACTs: um que informa, um que **parece** certo e está errado, e um que parece inútil e é a solução.
+### O que é um ACT
+
+No menu de batalha, **ACT** é o botão do meio — o que **não** machuca ninguém. Enquanto `FIGHT` tira HP e `ITEM` usa o inventário, o ACT abre um **submenu de ações escritas especificamente para aquele inimigo**: Checar, Chamar, Ignorar, Elogiar, Dançar, o que a cena pedir.
+
+É por ali que passa o caminho pacífico da luta: um ACT certo enche a barra de **MERCY**, e é a MERCY em 100 que acende o botão **SPARE**. Sem ACTs, o inimigo só pode ser resolvido na porrada.
+
+Dito de outro jeito: **o ACT é onde a personalidade do inimigo mora**. É o mini-diálogo interativo disfarçado de menu.
+
+### Onde o código vai
+
+`acts` é **um campo do struct `enemy()`**, como `hp` ou `s_idle`. Vai **dentro** da função que você escreveu no Passo 1, em `scripts/rpg_enc_enemies/rpg_enc_enemies.gml`:
+
+```gml
+function rpg_enemy_sonso() : enemy() constructor {
+    name = "Sonso"
+    hp   = 60
+    // ... todo o resto que você já escreveu ...
+
+    acts = [        // ←— AQUI, ainda dentro das chaves da função
+        { ... },
+        { ... },
+    ]
+}                   // ←— a chave que fecha o constructor
+```
+
+O valor é um **array de structs**: cada `{ ... }` dentro dos colchetes é um botão do submenu, na ordem em que aparecem. O `enemy()` base já vem com um ACT "Check" de exemplo — o que você escrever **substitui** esse array inteiro.
+
+> [!warning] Só o Kris tem o botão ACT
+> O segundo slot do menu é **ACT** para quem tem o "item" `item_s_act` nos `spells`, e **MAGIC** para todo o resto (`objects/o_enc/Create_0.gml:82`). No projeto, só o Kris tem (`scripts/party_init/party_init.gml:152`). Se você testar a luta com a Susie selecionada e não achar o botão ACT, não é bug: é a Susie.
+>
+> Para dar uma ação própria aos outros membros, existe o campo irmão **`acts_special`**, com uma entrada por personagem — veja o virovirokun em `scripts/enc_enemies/enc_enemies.gml:239`. Ela aparece dentro do menu MAGIC daquele personagem, como "ação padrão".
+
+### Os três ACTs do Sonso
+
+Um que informa, um que **parece** certo e está errado, e um que parece inútil e é a solução:
 
 ```gml
     acts = [
@@ -470,9 +513,11 @@ Cada bala dá TP ao passar rente à alma. O padrão é `graze = 2`; nas Patadas,
 
 ## Passo 9 — Colocar o gato no mundo
 
-Só agora vale mexer em room.
+Só agora vale mexer em room. Há três formas de iniciar a luta, e cada uma tem suas pegadinhas.
 
-**Jeito canônico:** arraste um **`o_actor_e`** para dentro da room, clique nele e, nas *Variable Definitions* do inspetor, preencha o campo **`encounter`** com:
+### A. Pelo ator no mapa (o jeito canônico)
+
+Arraste um **`o_actor_e`** para dentro da room, clique nele e, nas *Variable Definitions* do inspetor, preencha o campo **`encounter`** com:
 
 ```gml
 new rpg_enc_set_sonso()
@@ -480,19 +525,46 @@ new rpg_enc_set_sonso()
 
 Encostar nele começa a luta. Outras variáveis úteis no mesmo painel: `enable_chasing`, `chase_spd`, `chase_dist` (perseguição), `idle_path` (patrulha por um asset Path) e `sprite_facing_dir`.
 
-**Por trigger**, num Instance Creation Code de `o_trigger`:
+Bônus dessa forma: o ator que já está na room **é reaproveitado** como o inimigo da batalha (`o_enc_anim/Alarm_4.gml` procura um `actor_find` antes de criar um novo), então a transição do overworld pra luta fica contínua.
+
+### B. Por trigger — uma área da room que inicia a luta
+
+Arraste um **`o_trigger`** para a room e escreva no *Instance Creation Code* dele:
 
 ```gml
 trigger_code = function() {
-    new rpg_enc_set_sonso()._start()
+    enc_start(new rpg_enc_set_sonso())
+}
+
+trigger_exit_code = function() {
+    triggered = false     // rearma o trigger quando o jogador sai da área
 }
 ```
 
-**Por código, de qualquer lugar:**
+O código acima é a parte fácil. O que costuma fazer o trigger "não funcionar" são **três detalhes de configuração**, nenhum deles de GML:
+
+**1. Estique a instância.** `spr_trigger` tem **20×20 px**, com origem no canto superior esquerdo, e `o_trigger` é `visible: false` — ou seja, você colocou um quadradinho invisível que o jogador contorna sem perceber. Os triggers da própria engine são todos esticados: em `room_ex_church` eles usam `scaleX` entre 5 e 7 e `scaleY` 2, o que dá 100–140 × 40 px. Puxe as alças da instância no editor de room até cobrir a passagem inteira.
+
+**2. `o_trigger` dispara uma vez só.** O evento de entrada faz `triggered = true` e **nada na engine devolve isso pra `false`** — o evento de saída (`Other_11.gml`) só mexe em `trigger_exit`. Daí o `trigger_exit_code` do exemplo. Isso morde especialmente numa batalha: quando a luta acaba, a party volta pra posição que tinha quando começou — **em cima do trigger**. Sem o rearme, ele nunca mais dispara até a sala recarregar. O idioma vem da própria engine, em `rooms/room_ex_church/InstanceCreationCode_inst_2B13ACD5.gml:13`.
+
+**3. O jogador precisa estar no controle.** Com `controlled_activation = true` (o default), o Step só dispara se `get_leader()._checkmove()` for verdadeiro (`objects/o_trigger/Step_0.gml:4`), o que exige `moveable_console`, `moveable_dialogue`, `moveable_battle` e companhia — todos verdadeiros (`objects/o_actor/Create_0.gml:197`). Na prática: **com o console aberto (`TAB`), nenhum trigger dispara.** Se você quiser um trigger que funcione mesmo fora do controle (bordas de sala, por exemplo), ponha `controlled_activation = false` no Creation Code.
+
+> [!tip] Diagnóstico em 30 segundos
+> Ponha um `show_debug_message(">>> TRIGGER DISPAROU")` como primeira linha do `trigger_code`. Se a mensagem **não** aparece na janela *Output* ao andar por cima, o problema é colisão (item 1) ou controle (item 3) — e não o seu código de batalha.
+
+> [!info] Quando NÃO rearmar
+> Se o encontro é único — o gato foi derrotado e não deve voltar — é só omitir o `trigger_exit_code`. One-shot já é o comportamento padrão do `o_trigger`.
+
+### C. Por código, de qualquer lugar
 
 ```gml
+enc_start(new rpg_enc_set_sonso())
+
+// exatamente idêntico a:
 new rpg_enc_set_sonso()._start()
 ```
+
+`_start()` é só açúcar sintático: o método chama `enc_start(self)` (`scripts/enc_scripts/enc_scripts.gml:157`). Use o que ficar mais legível no seu contexto.
 
 ---
 
@@ -523,6 +595,9 @@ new rpg_enc_set_sonso()._start()
 | Bala azul não machuca ninguém | é o comportamento certo: `BLUE` só acerta quem está **se movendo** |
 | Crash ao desenhar a barra de MERCY | `can_spare` foi escrito como função; tem que ser bool |
 | Campo que você escreveu é ignorado | nome errado — structs em GML aceitam qualquer campo sem reclamar |
+| O trigger não inicia a luta | a instância está no tamanho original (20×20) — estique com `scaleX`/`scaleY` no editor de room |
+| O trigger funcionou uma vez e nunca mais | `triggered` nunca volta pra `false` sozinho; zere no `trigger_exit_code` |
+| Nenhum trigger dispara enquanto você testa | o console (`TAB`) está aberto — `_checkmove()` fica falso e o trigger não ativa |
 
 ---
 
