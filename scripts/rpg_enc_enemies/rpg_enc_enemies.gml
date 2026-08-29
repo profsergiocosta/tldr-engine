@@ -82,5 +82,5 @@ function rpg_enemy_sonso() : enemy() constructor {
         }
     ]
 
-    turn_object = o_turn_default   // por enquanto: uma bala parada
+    turn_object = o_turn_sonso  // por enquanto: uma bala parada
 }

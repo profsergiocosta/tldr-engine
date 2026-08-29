@@ -451,6 +451,7 @@
     {"id":{"name":"o_trigger","path":"objects/o_trigger/o_trigger.yy",},},
     {"id":{"name":"o_turn_default_dark","path":"objects/o_turn_default_dark/o_turn_default_dark.yy",},},
     {"id":{"name":"o_turn_default","path":"objects/o_turn_default/o_turn_default.yy",},},
+    {"id":{"name":"o_turn_sonso","path":"objects/o_turn_sonso/o_turn_sonso.yy",},},
     {"id":{"name":"o_turn","path":"objects/o_turn/o_turn.yy",},},
     {"id":{"name":"o_ui_actordialogue","path":"objects/o_ui_actordialogue/o_ui_actordialogue.yy",},},
     {"id":{"name":"o_ui_chapter_select","path":"objects/o_ui_chapter_select/o_ui_chapter_select.yy",},},

@@ -294,31 +294,45 @@ Um que informa, um que **parece** certo e está errado, e um que parece inútil 
 
 Até aqui o gato usa `o_turn_default` — uma bala parada. Vamos dar garras a ele.
 
-### Criando o objeto
+### 6.1 Criando o objeto
 
-1. Asset Browser → botão direito → **Create → Object**
-2. Nome: **`o_turn_sonso`**
-3. **Parent: `o_turn`** ← obrigatório, senão nada funciona
-4. Sprite: nenhum (é um objeto invisível de controle)
-5. Adicione os eventos: **Create**, **Other → User Event 0**, **Step**, **Destroy**
+1. **Asset Browser** → botão direito na pasta de objetos → **Create → Object**. Nome: **`o_turn_sonso`**.
+2. **Sprite: nenhum.** É um objeto invisível de controle, não desenha nada.
+3. **Parent: `o_turn`.** No painel do objeto, o campo **Parent** fica logo abaixo do de Sprite. Clique em *No Object Selected* e escolha `o_turn`. **É o passo mais fácil de esquecer, e sem ele nada funciona** — o objeto vira um objeto vazio qualquer, sem `timer`, sem `enemy_struct`, sem `__support_destroy_check()`.
+4. Salve (`Ctrl+S`).
 
-E aponte a ficha do inimigo pra ele:
+Depois, lá no `rpg_enc_enemies.gml`, aponte a ficha do inimigo pra ele:
 
 ```gml
     turn_object = o_turn_sonso
 ```
 
-### Os quatro eventos
+> [!warning] O evento que você abre pode ser o do PAI
+> Depois que o Parent está definido, a lista de eventos do `o_turn_sonso` passa a mostrar **também** os eventos herdados do `o_turn`. Clicar num deles abre o código do **`o_turn`**, não o seu — é por isso que você pode acabar encarando um Create cheio de `buff = 0`, `pattern_pool = [1]` e `__support_init_default = function() { ... }`. Esse é o código da engine.
+>
+> Confira sempre o **título da aba** da janela de código: tem que dizer `o_turn_sonso : Create`, e não `o_turn : Create`. Se você digitar por cima do código do `o_turn`, quebra o turno de **todos** os inimigos do jogo.
+
+### 6.2 Os eventos, um de cada vez
+
+São quatro, e vamos criar e preencher um por vez. A rotina é sempre a mesma: **Add Event** → escolher o evento → o GameMaker avisa que ele existe no pai e oferece chamar a versão herdada → **aceite**. Ele já escreve o `event_inherited();` na primeira linha, que é exatamente o que queremos.
+
+#### Evento 1 — Create
+
+**Add Event → Create.** Cole:
 
 ```gml
-// ---------- Create_0.gml ----------
 event_inherited()
 
 _lado = choose(-1, 1)   // de que lado começa a primeira patada
 ```
 
+Uma variável só, por enquanto: de que lado a primeira garrada vem. Sortear no Create (e não no Step) faz cada luta começar diferente sem ficar aleatória demais no meio do turno.
+
+#### Evento 2 — User Event 0
+
+**Add Event → Other → User Events → User Event 0.** Cole:
+
 ```gml
-// ---------- Other_10.gml  (User Event 0 — "init") ----------
 event_inherited()
 __support_init_default()
 
@@ -334,31 +348,47 @@ if !am_support {
 }
 ```
 
+Este é o evento de **init** do turno, e é onde a ligação entre personagem e mecânica acontece: o `pattern` deste turno passa a ser literalmente o humor do gato.
+
+Duas coisas que não são óbvias aqui:
+
+**`enemy_struct` já está preenchido.** A engine cria o turn_object passando `{enemy_index, enemy_struct}` no struct de criação e só depois chama o User Event 0 (`objects/o_enc/Step_0.gml:249`). Então dá pra ler o humor logo no init, sem esperar.
+
+**Seu `pattern` não vai ser sobrescrito.** O `o_turn` base sorteia um `pattern` do `pattern_pool` mais tarde, no User Event 2 — mas usando `??=`, ou seja, **só se ainda estiver `undefined`**. Como você já definiu aqui, o seu vence.
+
+#### Evento 3 — Step
+
+**Add Event → Step → Step.** Cole:
+
 ```gml
-// ---------- Step_0.gml ----------
 event_inherited()          // ← é ISTO que faz o timer_end funcionar
 
-// (os padrões entram aqui no Passo 7)
+// (os padrões de bala entram aqui no Passo 7)
 
 __support_destroy_check()
 ```
 
+**O `event_inherited()` aqui é obrigatório.** O `timer` que conta e o `timer_end` que encerra o turno vivem no Step do `o_turn` pai. Esqueceu a chamada? O turno nunca acaba e a batalha trava.
+
+#### Evento 4 — Destroy
+
+**Add Event → Destroy.** Cole:
+
 ```gml
-// ---------- Destroy_0.gml ----------
-instance_destroy(o_enc_bullet)
+event_inherited()               // devolve o inimigo ao sprite de idle
+instance_destroy(o_enc_bullet)  // e recolhe as balas órfãs
 ```
 
-### Quatro detalhes que não são óbvios
+**Limpar as balas não é frescura.** Nada na engine recolhe bala órfã — elas voam pra fora da box e continuam existindo. Sem essa linha, a próxima rodada começa com o lixo da anterior atravessando a tela. A própria engine faz isso em `o_ex_turn_complex_box/Destroy_0.gml`.
 
-**`enemy_struct` já existe no User Event 0.** A engine cria o turn_object passando `{enemy_index, enemy_struct}` no struct de criação, e só depois chama o User Event 0 (`objects/o_enc/Step_0.gml:249`). Então dá pra ler o humor logo no init.
+**E o `event_inherited()` também importa aqui.** O Destroy do `o_turn` pai devolve o inimigo ao sprite de idle (`objects/o_turn/Destroy_0.gml`). Sem a chamada, um inimigo que trocou de sprite durante o ataque fica congelado na pose de ataque pro resto da luta. O `o_turn_default` esquece essa chamada — só não dá problema porque ele nunca troca o sprite de ninguém.
 
-**`pattern` não vai ser sobrescrito.** O `o_turn` base sorteia um `pattern` do `pattern_pool` no User Event 2, mas usando `??=` — ou seja, **só se ainda estiver `undefined`**. Como já definimos no User Event 0, o nosso vence.
+> [!info] Os dois eventos que você NÃO deve criar
+> O `o_turn` também tem **User Event 1** (faz `turn_started = true`, que é o que põe o `timer` pra contar) e **User Event 2** (sorteia o `pattern` do `pattern_pool`). O Sonso não precisa mexer em nenhum dos dois — **não adicione esses eventos** e deixe o pai cuidar deles. Se você adicionar o User Event 1 e esquecer o `event_inherited()`, o `timer` nunca anda e a batalha trava.
 
-**O `event_inherited()` no Step é obrigatório.** O `timer` que conta e o `timer_end` que encerra o turno vivem no Step do `o_turn` pai. Esqueceu o `event_inherited()`? O turno nunca acaba e a batalha trava.
+### 6.3 Teste
 
-**O Destroy limpando as balas não é frescura.** Nada na engine recolhe balas órfãs — elas voam pra fora da box e continuam existindo. Se você não limpar, a próxima rodada começa com o lixo da anterior atravessando a tela. A própria engine faz isso (`o_ex_turn_complex_box/Destroy_0.gml`).
-
-**Teste.** O gato agora ataca com... nada, por 3 a 5 segundos, dependendo do humor. Mas a caixa abre e fecha sozinha, e é isso que queríamos confirmar antes de escrever padrão nenhum.
+O gato agora ataca com... nada, por 3 a 5 segundos, dependendo do humor. Mas a caixa abre e fecha sozinha, e é exatamente isso que queríamos confirmar antes de escrever padrão de bala nenhum.
 
 ---
 
@@ -826,7 +856,8 @@ __support_destroy_check()
 
 ```gml
 // ---------- Destroy_0.gml ----------
-instance_destroy(o_enc_bullet)
+event_inherited()               // devolve o inimigo ao sprite de idle
+instance_destroy(o_enc_bullet)  // e recolhe as balas órfãs
 ```
 
 ---
