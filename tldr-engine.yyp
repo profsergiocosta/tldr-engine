@@ -489,6 +489,7 @@
     {"id":{"name":"room_test_main","path":"rooms/room_test_main/room_test_main.yy",},},
     {"id":{"name":"room_test_movement","path":"rooms/room_test_movement/room_test_movement.yy",},},
     {"id":{"name":"room_test_shops","path":"rooms/room_test_shops/room_test_shops.yy",},},
+    {"id":{"name":"RoomTeste","path":"rooms/RoomTeste/RoomTeste.yy",},},
     {"id":{"name":"__CleanConfig","path":"scripts/__CleanConfig/__CleanConfig.yy",},},
     {"id":{"name":"__CleanConstants","path":"scripts/__CleanConstants/__CleanConstants.yy",},},
     {"id":{"name":"__CleanSystem","path":"scripts/__CleanSystem/__CleanSystem.yy",},},
@@ -1575,6 +1576,7 @@
   "resourceVersion":"2.0",
   "RoomOrderNodes":[
     {"roomId":{"name":"room_init","path":"rooms/room_init/room_init.yy",},},
+    {"roomId":{"name":"RoomTeste","path":"rooms/RoomTeste/RoomTeste.yy",},},
     {"roomId":{"name":"room_test_main","path":"rooms/room_test_main/room_test_main.yy",},},
     {"roomId":{"name":"room_ex_church","path":"rooms/room_ex_church/room_ex_church.yy",},},
     {"roomId":{"name":"room_test_movement","path":"rooms/room_test_movement/room_test_movement.yy",},},
