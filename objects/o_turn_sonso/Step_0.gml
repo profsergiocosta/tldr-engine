@@ -1,6 +1,9 @@
 // ---------- Step_0.gml ----------
 event_inherited()          // ← é ISTO que faz o timer_end funcionar
 
+if timer == 0
+    exit 
+
 // (os padrões entram aqui no Passo 7)
 if pattern == "sonso" {
     if timer % 30 == 0 && timer > 0 && timer < timer_end - 30 {
@@ -20,6 +23,9 @@ if pattern == "sonso" {
     }
 }
 else if pattern == "irritado" {
+	
+	o_enc.mybox.image_angle = sine(4, 2)        // tremor rápido e curto
+	
     // 1) chuvisco rápido, caindo de cima
     if timer % 10 == 0 && timer > 0 && timer < timer_end - 50 {
         instance_create(o_enc_bullet,
@@ -42,6 +48,7 @@ else if pattern == "irritado" {
                 image_xscale: 1.5, image_yscale: 6    // 22 x 90 px — não dá pra desviar
             })
     }
+	
 }
 else if pattern == "curioso" {
     if timer == 10 {
@@ -58,6 +65,8 @@ else if pattern == "curioso" {
                 })
         }
     }
+	
+	o_enc.mybox.image_angle = sine(40, 12) 
 }
 
 __support_destroy_check()
