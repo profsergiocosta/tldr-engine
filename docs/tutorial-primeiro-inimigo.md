@@ -38,6 +38,74 @@ Duas vezes `Ignorar` (+50 de MERCY cada) e ele senta. Fim pacífico.
 
 ---
 
+## Antes de tudo — fazendo o português funcionar
+
+Todo diálogo deste tutorial tem acento, e no projeto recém-clonado **acento não aparece na tela**. Não é bug do seu código: as fontes latinas da engine foram geradas só com ASCII — o range delas é **32–127** (veja `"ranges"` em `fonts/font_main/font_main.yy`). `á` é 225, `ç` é 231, `ã` é 227. Sem glifo, o GameMaker simplesmente não desenha nada.
+
+Consertar é rápido, mas **a ordem dos passos importa**.
+
+### 1. Instale as fontes de origem — antes de qualquer coisa
+
+O projeto não guarda `.ttf` nenhum: cada fonte é gerada a partir de uma fonte **instalada no seu sistema**.
+
+| Fonte da engine | Gerada a partir de | Onde pega |
+|---|---|---|
+| `font_main` (diálogo) | **8bitoperator JVE** | Jayvee Enaguas (GrafxKid), grátis |
+| `font_main_mono` | **Monospaced JVE** | mesmo autor |
+| `font_lwmenu` (menus) | **Crypt of Tomorrow** | Jeti, grátis |
+| `font_8bit` | **Press Start 2P** | Google Fonts |
+| `font_prophecy` | **MixSerifCondense** | — |
+| `font_dotumche` | **DotumChe Pixel** | — |
+
+As duas primeiras linhas são as que importam pra este tutorial. Para conferir o que já está instalado:
+
+```bash
+fc-list : family | grep -i "8bitoperator\|crypt of tomorrow\|press start"
+```
+
+Instalando no Linux:
+
+```bash
+mkdir -p ~/.local/share/fonts
+cp *.ttf ~/.local/share/fonts/
+fc-cache -f
+```
+
+No Windows é clique duplo no `.ttf` → **Instalar**.
+
+### 2. Reinicie o IDE do GameMaker
+
+Ele só lê a lista de fontes do sistema ao iniciar. Pular este passo é o mesmo que não ter instalado nada.
+
+### 3. Só agora, amplie o range de caracteres
+
+Para cada fonte latina (comece pela `font_main`):
+
+1. Abra a fonte no Asset Browser.
+2. Na seção **Character Range**, clique em **Add**.
+3. *lower* = **192**, *upper* = **255**. Isso cobre `À-ÿ` inteiro — todos os acentos do português. (Se quiser também `º ª « » ¿`, use 160–255.)
+4. **Olhe o preview.** Ele tem que continuar pixelado, só que agora com `À Á Â Ã Ç É` no meio.
+
+> [!warning] Se o preview virar uma fonte lisa, você pulou o passo 1
+> Sem a TTF instalada, o GameMaker não avisa nada: ele silenciosamente substitui por uma fonte padrão do sistema e regenera o bitmap com ela. Os acentos aparecem — mas o pixel art vai embora, e tudo fica maior. É fácil de medir: no `font_main`, o glifo `A` passa de 6px para 10px de largura e o `lineHeight` de 16 para 22.
+>
+> Como está tudo em git, dá pra voltar sem dor:
+>
+> ```bash
+> git checkout -- fonts/
+> rm -f fonts/font_main/font_main.old.png fonts/font_main/font_main.old.yy
+> ```
+>
+> Depois feche e reabra o projeto, instale as fontes de verdade, e refaça o passo 3.
+
+> [!info] E se a pixel font não tiver os acentos?
+> Ampliar o range não inventa desenho — se a TTF não tiver `ã`, sai vazio de qualquer jeito. A `8bitoperator JVE` tem; outras podem não ter. O preview responde na hora. Se faltar, as saídas são trocar por uma pixel font que tenha, ou desenhar os glifos à mão no atlas.
+
+> [!tip] Quer só começar a programar?
+> Escreva os diálogos sem acento por enquanto (`"* Um gato te encara. Ele nao parece impressionado."`). Feio, mas destrava o teste — e some assim que você regenerar as fontes direito.
+
+---
+
 ## Passo 0 — Onde cada coisa mora
 
 Quatro peças, quatro lugares:
@@ -492,51 +560,143 @@ else if pattern == "curioso" {
 
 ## Passo 8 — Acabamento
 
-### O gato reage a apanhar
+### 8.1 O gato reage a apanhar
 
-Adicione na ficha do inimigo — um gato que apanha para de brincar:
+**Onde:** `scripts/rpg_enc_enemies/rpg_enc_enemies.gml`, **dentro** do `rpg_enemy_sonso()` — é um campo do struct, igual a `hp` ou `acts`. Pode ficar logo depois do `dialogue`:
 
 ```gml
-    ev_hurt = method(self, function() {
+function rpg_enemy_sonso() : enemy() constructor {
+    // ... name, hp, sprites, humor, dialogue, acts que você já escreveu ...
+
+    ev_hurt = method(self, function() {      // ←— AQUI, dentro do constructor
         if hp <= max_hp * 0.4 && humor != "irritado" {
             humor = "irritado"
             enc_enemy_set_tired(slot, true)
         }
     })
+}
 ```
 
-`enc_enemy_set_tired` marca o inimigo como **TIRED** — estado que magias de misericórdia (como as que poupam inimigos cansados) sabem usar. Note que aqui `method(self, ...)` de novo, porque mexemos em `hp` e `humor` do próprio struct.
+`ev_hurt` é um dos **hooks** do `enemy()`: campos que a engine chama sozinha em momentos específicos da luta. Todos vêm desligados (`-1`) e passam a existir no instante em que você atribui uma função. Os outros são `ev_init`, `ev_pre_dialogue`, `ev_dialogue`, `ev_turn`, `ev_turn_start`, `ev_post_turn`, `ev_party_exec` e `ev_win`.
+
+`enc_enemy_set_tired` marca o inimigo como **TIRED** — estado que magias de misericórdia (as que poupam inimigos cansados) sabem usar.
+
+E de novo o `method(self, ...)`: sem ele, `hp`, `humor` e `slot` não resolvem, porque a função não estaria amarrada ao struct do inimigo.
 
 > [!warning] `ev_hurt` roda **antes** do dano ser aplicado
-> Olhe a ordem em `scripts/enc_scripts/enc_scripts.gml:31` — o hook é chamado, e só depois vem o `enemy_struct.hp -= hurt`. Ou seja, o `hp` que você lê lá dentro ainda é o de **antes** deste golpe, e o gato só fica irritado no golpe *seguinte* ao que cruzou os 40%. Para um "ele percebe que está apanhando" isso é ótimo (dá um beat de atraso, parece reação). Se você precisar do valor exato pós-dano, use `ev_post_turn`.
+> Olhe a ordem em `scripts/enc_scripts/enc_scripts.gml:31` — o hook é chamado, e só depois vem o `enemy_struct.hp -= hurt`. Ou seja, o `hp` que você lê lá dentro ainda é o de **antes** deste golpe, e o gato só fica irritado no golpe *seguinte* ao que cruzou os 40%. Para um "ele percebe que está apanhando" isso é ótimo — dá um beat de atraso e parece reação. Se você precisar do valor exato pós-dano, use `ev_post_turn`.
 >
 > E `ev_hurt` é chamado **sem argumentos** (`enemy_struct.ev_hurt()`). Se você escrever `function(dmg)`, `dmg` chega `undefined`.
 
-### Recompensa por grazar
+### 8.2 Recompensa por grazar
 
-Cada bala dá TP ao passar rente à alma. O padrão é `graze = 2`; nas Patadas, que são largas e lentas, vale aumentar pra convidar o jogador a arriscar:
+> [!info] O que é "grazar"?
+> Do inglês **graze**, "roçar" / "passar de raspão" — a gíria do gênero *bullet hell*, herdada da série Touhou. Grazar é passar **tão perto de uma bala que quase toma dano, sem tomar**.
+>
+> A alma não anda sozinha: junto com ela vai o **`o_enc_soul_grazer`**, um segundo objeto que gruda no coração e tem uma área **maior** que ele. Bala que toca o coração machuca; bala que toca só a área externa é um graze, e vale prêmio:
+>
+> - **TP** (a barra de magia, na lateral esquerda) ganha o valor do campo `graze` da bala;
+> - **o turno encurta** — `time_points` frames saem do `timer_end`.
+>
+> A razão de existir é de design: sem graze, a jogada ótima seria fugir pro canto mais vazio e esperar o turno passar — o jogador vira espectador. Com graze, chegar perto **paga**, e a fase de defesa vira decisão em vez de espera.
+>
+> Só balas **`SOLID`** dão graze, e roçar a mesma bala de novo rende só `graze/12` — não dá pra farmar uma bala só.
+
+**Onde:** no `Step_0.gml` do `o_turn_sonso`, dentro do bloco `if pattern == "sonso"`. Não é código novo — é acrescentar dois campos ao `instance_create` das Patadas que você já escreveu no Passo 7:
 
 ```gml
+        for (var i = -1; i <= 1; i ++) {
+            instance_create(o_enc_bullet,
+                o_enc_box.x + 80 * _lado,
+                o_enc_box.y + _falha + i * 26,
                 DEPTH_ENCOUNTER.BULLETS_OUTSIDE, {
                     speed: 3,
                     direction: (_lado == 1 ? 180 : 0),
                     att: 4,
-                    graze: 4,          // dobro de TP: as garras convidam a passar perto
-                    time_points: 8     // e encurtam mais o turno
+                    graze: 4,          // ←— novo: dobro de TP
+                    time_points: 8     // ←— novo: encurta mais o turno
                 })
+        }
 ```
+
+O padrão de `graze` é 2. As Patadas são largas e lentas, então valem mais: dobrar o prêmio convida o jogador a passar rente em vez de fugir pro canto.
 
 > [!info] `graze` não é um raio
 > É a **quantidade de TP** que a bala concede. O tamanho da zona vem do sprite do `o_enc_soul_grazer` (e cresce com itens tipo `item_a_pink_ribbon`). E só balas **`SOLID`** dão graze — azuis e laranjas não valem nada de TP.
 
-### Balanceamento: os números que importam
+### 8.3 Como testar o que você acabou de fazer
+
+Nenhuma das duas coisas do Passo 8 aparece sozinha: é preciso provocar. E provocar jogando a luta inteira, de novo e de novo, é o jeito lento.
+
+#### O truque geral: um ACT descartável de debug
+
+Acrescente um quarto ACT temporário no `rpg_enemy_sonso()`:
+
+```gml
+        {
+            name: "DEBUG",
+            desc: "so para teste - apagar depois",
+            party: [],
+            exec: function(slot, user) {
+                var me = o_enc.encounter_data.enemies[slot]
+                me.humor = "irritado"          // troque aqui: "sonso" | "irritado" | "curioso"
+                enc_enemy_set_tired(slot, true)
+            }
+        },
+```
+
+Com ele você pula direto para o estado que quer ver, em vez de depender do jogo chegar lá. É a forma mais rápida de conferir os três padrões de bala do Passo 7 também. **Apague antes de considerar o inimigo pronto.**
+
+#### Testando o `ev_hurt` (8.1)
+
+O gatilho é HP ≤ 40% — com `hp = 60`, isso significa descer abaixo de 24. Em vez de bater até lá, baixe a vida temporariamente:
+
+```gml
+    hp     = 10
+    max_hp = 10
+```
+
+Um único FIGHT já cruza o limiar. O que observar **na rodada seguinte** (lembre: o hook lê o HP de *antes* do golpe, então o efeito atrasa um turno):
+
+| Sinal | Onde olhar |
+|---|---|
+| O nome do inimigo fica **azul-ciano** | lista de inimigos, no menu |
+| Aparece o ícone de TIRED (`spr_ui_enc_tiredmark`) ao lado do nome | idem |
+| O status passa a mostrar `(Tired)` | idem |
+| A fala vira "O Sonso bufa. As orelhas estão pra trás." | balão do inimigo |
+| O flavor vira "O ar está tenso. E peludo." | topo do menu |
+| O ataque vira a **Bufada** — chuvisco rápido + parede azul | fase de defesa |
+
+Se o nome não mudar de cor, o `ev_hurt` não rodou: ponha um `show_debug_message("ev_hurt rodou!")` como primeira linha dele e olhe a janela **Output**.
+
+#### Testando o graze (8.2)
+
+Graze é sutil demais pra avaliar no valor final. **Exagere primeiro, calibre depois:**
+
+1. Troque temporariamente `graze: 4` por **`graze: 40`**. Um único roçar passa a encher quase metade da barra de TP — impossível não ver.
+2. Entre na luta e passe de raspão nas Patadas, sem encostar.
+3. Observe **três** sinais ao mesmo tempo: o som (`snd_graze`), o anel piscando em volta do coração, e a **barra de TP** subindo na lateral esquerda.
+4. Agora troque `time_points: 8` por **`time_points: 30`** e repare que o turno acaba visivelmente mais cedo quando você joga colado nas balas.
+5. Volte para os valores reais (4 e 8) e ajuste a gosto.
+
+> [!warning] Se o graze simplesmente não acontece
+> - A bala é `BLUE` ou `ORANGE`? **Só `SOLID` dá graze** — as outras duas não valem nada de TP.
+> - Você tomou dano há pouco? Durante os i-frames o grazer fica desligado (`i_frames == 0` é condição).
+> - É o primeiro instante do turno? O grazer só liga depois de `o_enc.turn_timer > 10`.
+> - Está roçando a **mesma** bala várias vezes? Da segunda em diante o prêmio cai para `graze/12`.
+
+#### O teste que importa de verdade
+
+Depois que os dois funcionam, jogue a luta inteira uma vez **sem** debug nenhum e responda: *dá pra perceber que o gato mudou de humor sem ler o texto?* Se a resposta for não, o problema não é o código — é que os três padrões de bala ainda estão parecidos demais entre si.
+
+### 8.4 Balanceamento: os números que importam
 
 | Se o teste mostrou… | Mexa em… |
 |---|---|
-| morre rápido demais | `att` das balas (é `5*att`, então 4 → 3 já tira 5 de dano) |
-| turno arrastado | `timer_end` (30 frames = 1s) |
-| impossível de desviar | espaçamento das balas, não a velocidade |
-| jogador nunca ganha TP | balas passando longe demais — aproxime o padrão da alma |
+| o grupo morre rápido demais | `att` das balas — o dano é `5*att`, então de 4 para 3 já são 5 pontos a menos por acerto |
+| turno arrastado | `timer_end` no User Event 0 (30 frames = 1s) |
+| impossível de desviar | o espaçamento entre as balas, não a velocidade delas |
+| jogador nunca ganha TP | as balas passam longe demais — aproxime o padrão da alma |
 | luta longa demais | `hp` do inimigo, ou dê mais MERCY por ACT |
 
 ---
@@ -614,6 +774,8 @@ new rpg_enc_set_sonso()._start()
 | Sintoma | Causa |
 |---|---|
 | `spr_xxx not defined` ao compilar | asset que não existe — confira o nome no Asset Browser |
+| Acentos não aparecem no jogo | as fontes vêm com range 32–127 — veja *Antes de tudo* |
+| A fonte perdeu o pixel art e ficou maior | você regenerou sem a TTF de origem instalada; `git checkout -- fonts/` e refaça |
 | O encontro não aparece no `encounter_select` | o arquivo não compilou; veja a janela **Output** |
 | A batalha trava e nunca sai do turno | faltou `event_inherited()` no `Step_0.gml` do turn_object |
 | Balas da rodada passada aparecem na próxima | faltou `instance_destroy(o_enc_bullet)` no `Destroy_0.gml` |

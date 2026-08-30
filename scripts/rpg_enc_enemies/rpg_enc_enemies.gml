@@ -8,6 +8,13 @@ function rpg_enemy_sonso() : enemy() constructor {
     attack  = 4
     defense = 1
     carrying_money = 12
+	
+	ev_hurt = method(self, function() {      // ←— AQUI, dentro do constructor
+        if hp <= max_hp * 0.4 && humor != "irritado" {
+            humor = "irritado"
+            enc_enemy_set_tired(slot, true)
+        }
+    })
 
     // sprites (já existem no projeto)
     s_idle  = spr_ex_e_tasque
