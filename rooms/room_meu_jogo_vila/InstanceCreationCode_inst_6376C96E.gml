@@ -1,1 +1,1 @@
-text = "{box_pos(true)}{col(y)}* Bem-vindo à praça de teste.{col(w)}{p}{e}";
+text = "{box_pos(true)}{col(y)}* Bem-vindo à praça de teste. Bonitão {col(w)}{p}{e}";

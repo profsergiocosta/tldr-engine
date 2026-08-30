@@ -38,71 +38,26 @@ Duas vezes `Ignorar` (+50 de MERCY cada) e ele senta. Fim pacífico.
 
 ---
 
-## Antes de tudo — fazendo o português funcionar
+## Antes de tudo — os acentos não vão aparecer
 
-Todo diálogo deste tutorial tem acento, e no projeto recém-clonado **acento não aparece na tela**. Não é bug do seu código: as fontes latinas da engine foram geradas só com ASCII — o range delas é **32–127** (veja `"ranges"` em `fonts/font_main/font_main.yy`). `á` é 225, `ç` é 231, `ã` é 227. Sem glifo, o GameMaker simplesmente não desenha nada.
+Todo diálogo deste tutorial tem acento, e num projeto recém-clonado **acento não aparece na tela**. Não é bug do seu código: as fontes da engine são bitmap fonts geradas só com ASCII (range 32–127), e `á` é 225, `ç` é 231, `ã` é 227. Sem glifo no atlas, o GameMaker não desenha nada — sem erro, sem aviso.
 
-Consertar é rápido, mas **a ordem dos passos importa**.
+O conserto completo está em **[`tutorial-fontes-acentos.md`](tutorial-fontes-acentos.md)**. Três coisas que valem saber antes de começar por aqui:
 
-### 1. Instale as fontes de origem — antes de qualquer coisa
+**1. São três fontes diferentes, conforme o contexto.** Consertar uma não conserta as outras, e isso confunde muito:
 
-O projeto não guarda `.ttf` nenhum: cada fonte é gerada a partir de uma fonte **instalada no seu sistema**.
+| O texto do Sonso | Fonte |
+|---|---|
+| O **balão de fala** dele na batalha (o campo `dialogue`) | `font_dotumche` |
+| O texto dos **ACTs** (`encounter_scene_dialogue`) e as placas do overworld | `font_main_mono` |
+| O **nome** dele na lista de inimigos e os menus | `font_main` |
 
-| Fonte da engine | Gerada a partir de | Onde pega |
-|---|---|---|
-| `font_main` (diálogo) | **8bitoperator JVE** | Jayvee Enaguas (GrafxKid), grátis |
-| `font_main_mono` | **Monospaced JVE** | mesmo autor |
-| `font_lwmenu` (menus) | **Crypt of Tomorrow** | Jeti, grátis |
-| `font_8bit` | **Press Start 2P** | Google Fonts |
-| `font_prophecy` | **MixSerifCondense** | — |
-| `font_dotumche` | **DotumChe Pixel** | — |
+**2. A ordem importa.** Instalar a fonte → **reiniciar o IDE** → ampliar o range → forçar a regeneração. Ampliar o range com o IDE aberto desde antes da instalação faz o GameMaker gerar tudo a partir de uma fonte substituta, e o seu pixel art vira uma fonte lisa e maior — sem nenhum aviso.
 
-As duas primeiras linhas são as que importam pra este tutorial. Para conferir o que já está instalado:
-
-```bash
-fc-list : family | grep -i "8bitoperator\|crypt of tomorrow\|press start"
-```
-
-Instalando no Linux:
-
-```bash
-mkdir -p ~/.local/share/fonts
-cp *.ttf ~/.local/share/fonts/
-fc-cache -f
-```
-
-No Windows é clique duplo no `.ttf` → **Instalar**.
-
-### 2. Reinicie o IDE do GameMaker
-
-Ele só lê a lista de fontes do sistema ao iniciar. Pular este passo é o mesmo que não ter instalado nada.
-
-### 3. Só agora, amplie o range de caracteres
-
-Para cada fonte latina (comece pela `font_main`):
-
-1. Abra a fonte no Asset Browser.
-2. Na seção **Character Range**, clique em **Add**.
-3. *lower* = **192**, *upper* = **255**. Isso cobre `À-ÿ` inteiro — todos os acentos do português. (Se quiser também `º ª « » ¿`, use 160–255.)
-4. **Olhe o preview.** Ele tem que continuar pixelado, só que agora com `À Á Â Ã Ç É` no meio.
-
-> [!warning] Se o preview virar uma fonte lisa, você pulou o passo 1
-> Sem a TTF instalada, o GameMaker não avisa nada: ele silenciosamente substitui por uma fonte padrão do sistema e regenera o bitmap com ela. Os acentos aparecem — mas o pixel art vai embora, e tudo fica maior. É fácil de medir: no `font_main`, o glifo `A` passa de 6px para 10px de largura e o `lineHeight` de 16 para 22.
->
-> Como está tudo em git, dá pra voltar sem dor:
->
-> ```bash
-> git checkout -- fonts/
-> rm -f fonts/font_main/font_main.old.png fonts/font_main/font_main.old.yy
-> ```
->
-> Depois feche e reabra o projeto, instale as fontes de verdade, e refaça o passo 3.
-
-> [!info] E se a pixel font não tiver os acentos?
-> Ampliar o range não inventa desenho — se a TTF não tiver `ã`, sai vazio de qualquer jeito. A `8bitoperator JVE` tem; outras podem não ter. O preview responde na hora. Se faltar, as saídas são trocar por uma pixel font que tenha, ou desenhar os glifos à mão no atlas.
+**3. Duas das fontes de origem não existem para baixar.** A do balão (`DotumChe Pixel`) e a do diálogo (`Monospaced JVE`). O tutorial de fontes mostra como usar a `8bitoperator JVE` no lugar das duas.
 
 > [!tip] Quer só começar a programar?
-> Escreva os diálogos sem acento por enquanto (`"* Um gato te encara. Ele nao parece impressionado."`). Feio, mas destrava o teste — e some assim que você regenerar as fontes direito.
+> Escreva os diálogos sem acento por enquanto — `"* Um gato te encara. Ele nao parece impressionado."` Feio, mas destrava o teste, e some assim que você regenerar as fontes. Deixe o conserto para quando o inimigo já estiver funcionando.
 
 ---
 
@@ -775,6 +730,7 @@ new rpg_enc_set_sonso()._start()
 |---|---|
 | `spr_xxx not defined` ao compilar | asset que não existe — confira o nome no Asset Browser |
 | Acentos não aparecem no jogo | as fontes vêm com range 32–127 — veja *Antes de tudo* |
+| Consertei a fonte e o balão do inimigo continua sem acento | o balão usa `font_dotumche`, não a fonte que você consertou |
 | A fonte perdeu o pixel art e ficou maior | você regenerou sem a TTF de origem instalada; `git checkout -- fonts/` e refaça |
 | O encontro não aparece no `encounter_select` | o arquivo não compilou; veja a janela **Output** |
 | A batalha trava e nunca sai do turno | faltou `event_inherited()` no `Step_0.gml` do turn_object |
