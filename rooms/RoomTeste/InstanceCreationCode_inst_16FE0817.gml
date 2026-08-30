@@ -1,0 +1,1 @@
+text = "{col(y)}* Bem-vindo Sérgio, Bonitão.{col(w)}{p}{e}"
