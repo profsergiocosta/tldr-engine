@@ -333,43 +333,105 @@ Três detalhes:
 
 ## Passo 6 — O fundo da tela
 
-O fundo padrão é a grade animada. Ele vem do `enc_set()`:
+O fundo é a única parte da batalha que a engine desenha **atrás** de tudo, e é a que mais muda a atmosfera com menos esforço. Antes de trocar, vale entender o que está lá.
+
+### 6.1 Como o fundo padrão funciona
+
+Tudo vem de um objeto só, o **`o_eff_bg`**, criado pela engine na depth `DEPTH_ENCOUNTER.BACKGROUND` no começo da batalha (`o_enc_anim/Alarm_1.gml:72`). O `Draw` dele empilha **três camadas**:
+
+| Camada | O que é | Controlada por |
+|---|---|---|
+| 1. Cortina preta | um retângulo preto cobrindo a tela, que some o overworld | `image_alpha` (sobe de 0 a 1 sozinho, 0.1 por frame) |
+| 2. A grade | `spr_enc_bg` desenhado **duas vezes**, em velocidades e opacidades diferentes — é isso que dá a sensação de profundidade | `image_blend`, e só existe se `bg_type == ENC_BG.GRID` |
+| 3. O véu | outro retângulo preto por cima de tudo | `fade` — a engine anima para `0.75` quando o turno de defesa começa |
+
+A camada 1 e a 2 só aparecem com `bg_type = ENC_BG.GRID`. A camada 3 **sempre** existe, mesmo com `NONE` — é ela que escurece a cena quando a caixa abre, e você provavelmente quer manter.
+
+> [!info] O fundo é desenhado em coordenadas de sala, não de interface
+> A batalha acontece numa janela de **320×240** ancorada na câmera. Por isso todo desenho de fundo soma `guipos_x()` e `guipos_y()` — que são a posição da câmera (`scripts/custom/custom.gml:2`). Sem esse deslocamento, o seu fundo fica no canto errado assim que a câmera não estiver na origem.
+>
+> Não confunda com a interface (nomes, HP, botões), que é desenhada no `Draw GUI` num espaço de 640×480 — o dobro.
+
+### 6.2 Nível 1 — recolorir a grade
+
+A grade é desenhada com `image_blend`, então trocar a cor do fundo inteiro é **uma linha**. E como o Sonso já tem humor, dá para amarrar as duas coisas.
+
+No `Step_0.gml` do `o_turn_sonso`, junto do bloco da arena:
 
 ```gml
-    bg_type = ENC_BG.GRID    // ou ENC_BG.NONE
+// ---------- a arena reage ao humor ----------
+if pattern == "irritado" {
+    o_enc.mybox.image_angle = sine(4, 2)
+    o_eff_bg.image_blend = make_color_rgb(255, 120, 90)   // o mundo esquenta
+}
+else if pattern == "curioso" {
+    o_enc.mybox.image_angle = sine(40, 12)
+    o_eff_bg.image_blend = make_color_rgb(150, 190, 255)  // e esfria
+}
+else
+    o_eff_bg.image_blend = c_white                        // neutro
 ```
 
-São só esses dois valores (`objects/o_eff_bg/Create_0.gml:11`). Para um fundo próprio, o caminho é desligar o padrão e desenhar o seu.
+Duas rodadas de teste e você vê o quanto isso muda a leitura da cena sem uma bala nova sequer. É o retorno mais alto por linha escrita deste tutorial inteiro.
 
-**1. No `enc_set()`:**
+> [!warning] `o_eff_bg` não existe fora da batalha
+> Ele nasce junto com a luta e se destrói no fim. Dentro do `turn_object` isso é seguro — se o turno existe, a batalha existe. Fora dele, teste com `if instance_exists(o_eff_bg)` antes.
+
+### 6.3 Nível 2 — um fundo próprio
+
+Quando a grade não serve, o caminho é desligá-la e desenhar o seu.
+
+**Primeiro, desligue a grade** no `enc_set()`:
 
 ```gml
     bg_type = ENC_BG.NONE
 ```
 
-**2. Crie um objeto** `o_bg_telhado`, sem parent, com dois eventos:
+Isso apaga as camadas 1 e 2. Sobra a camada 3, o véu — que continua sendo o que dá foco à arena.
+
+**Depois crie o objeto.** Um telhado noturno para o gato, sem precisar desenhar nenhum sprite novo — tudo com o `spr_pixel`, que é 1×1 com origem no canto, então `image_xscale` é literalmente a largura em pixels:
 
 ```gml
-// Create_0.gml
-depth = DEPTH_ENCOUNTER.BACKGROUND + 10   // atrás de tudo da batalha
+// ---------- o_bg_telhado / Create_0.gml ----------
+depth = DEPTH_ENCOUNTER.BACKGROUND + 10   // número MAIOR = mais ao fundo
+
+// as estrelas são sorteadas uma vez só, não a cada frame
+estrelas = []
+repeat (40)
+    array_push(estrelas, {
+        xx:   random(320),
+        yy:   random(150),
+        fase: random(360)
+    })
 ```
 
 ```gml
-// Draw_0.gml
-draw_set_color(make_color_rgb(18, 20, 40))
-draw_rectangle(0, 0, room_width, room_height, false)
-draw_set_color(c_white)
+// ---------- o_bg_telhado / Draw_0.gml ----------
+var _ox = guipos_x()
+var _oy = guipos_y()
 
-// suas estrelas, telhados, o que for
+// o céu
+draw_sprite_ext(spr_pixel, 0, _ox, _oy, 320, 240, 0, make_color_rgb(14, 16, 34), 1)
+
+// as estrelas, piscando fora de fase
+for (var i = 0; i < array_length(estrelas); i ++) {
+    var _e = estrelas[i]
+    var _brilho = 0.35 + 0.35 * dsin(o_world.frames * 2 + _e.fase)
+
+    draw_sprite_ext(spr_pixel, 0, _ox + _e.xx, _oy + _e.yy, 1, 1, 0, c_white, _brilho)
+}
+
+// a silhueta do telhado
+draw_sprite_ext(spr_pixel, 0, _ox, _oy + 170, 320, 70, 0, make_color_rgb(6, 7, 16), 1)
 ```
 
 ```gml
-// Step_0.gml — some junto com a batalha
+// ---------- o_bg_telhado / Step_0.gml ----------
 if !instance_exists(o_enc)
     instance_destroy()
 ```
 
-**3. Crie ele quando a batalha começa**, no hook `ev_init` do `enc_set()`:
+**Por fim, mande criar** no hook `ev_init` do `enc_set()` — ele roda um frame depois de `o_enc` existir:
 
 ```gml
     ev_init = function() {
@@ -377,7 +439,47 @@ if !instance_exists(o_enc)
     }
 ```
 
-Duas observações: a depth precisa ser **maior** que `DEPTH_ENCOUNTER.BACKGROUND` (-6000) para ficar atrás dos elementos da batalha — em GameMaker, depth maior é mais ao fundo. E o `o_eff_bg` continua existindo mesmo com `NONE`: ele ainda desenha o escurecimento (`fade`) que a engine anima quando o turno começa, o que é bom — mantém o efeito de "foco na arena".
+Três decisões que valem explicar:
+
+**As estrelas nascem no Create, não no Draw.** Sortear posição dentro do `Draw` faria elas piscarem de lugar todo frame. Guardar num array e só ler no desenho é o padrão para qualquer elemento decorativo estático.
+
+**O `Step` que se autodestrói.** Sem ele, o fundo sobrevive ao fim da batalha e aparece no overworld. Amarrar a vida dele à existência do `o_enc` cobre todos os finais — vitória, fuga, derrota — sem você precisar tratar cada um.
+
+**A depth é `BACKGROUND + 10`, não `- 10`.** Em GameMaker, **depth maior é mais ao fundo**. É o erro mais comum aqui: usar um número menor coloca o seu fundo na frente dos inimigos.
+
+| Depth | O que fica lá |
+|---|---|
+| `-6500` `BULLETS_OUTSIDE` | balas na frente de tudo |
+| `-6400` `SOUL` | a alma |
+| `-6300` `BOX` | a moldura da arena |
+| `-6200` `BULLETS_INSIDE` | balas recortadas, atrás da moldura |
+| `-6100` `ACTORS` | os inimigos e o grupo |
+| `-6000` `BACKGROUND` | o `o_eff_bg` — grade e véu |
+| `-5990` | **o seu fundo** |
+
+### 6.4 O véu escuro, como recurso dramático
+
+A camada 3 (`o_eff_bg.fade`) é um retângulo preto por cima de tudo. A engine anima ele para `0.75` quando o turno de defesa começa (`o_enc/Step_0.gml:241`) e de volta a `0` quando termina.
+
+Como é só uma variável, dá para usar de propósito. Escurecer mais quando o gato está irritado, por exemplo — o mundo some e sobra só a arena:
+
+```gml
+// no Other_12.gml, depois de configurar a caixa
+if pattern == "irritado"
+    animate(o_eff_bg.fade, 0.92, 20, anime_curve.sine_out, o_eff_bg, "fade")
+```
+
+`animate(de, para, frames, curva, instância, "campo")` é a função de animação da engine (`scripts/anime_custom/anime_custom.gml:17`). Não precisa desfazer: a engine devolve o `fade` a zero no fim do turno.
+
+### Como testar o fundo
+
+| Passo | O que fazer | O que confirma |
+|---|---|---|
+| 1 | Ponha `o_eff_bg.image_blend = c_red` e rode | se não ficar vermelho, `bg_type` já está em `NONE` ou o código está no evento errado |
+| 2 | Troque para `ENC_BG.NONE` sem criar objeto nenhum | o fundo tem que ficar **preto** com o véu; se a grade continuar, você mexeu no `enc_set()` errado |
+| 3 | Crie o `o_bg_telhado` com uma cor berrante (`c_lime`) | se não aparecer, é a depth; se aparecer **na frente** dos inimigos, também |
+| 4 | Ande com a câmera antes de entrar na batalha | se o fundo escorregar, faltou somar `guipos_x()` / `guipos_y()` |
+| 5 | Ganhe ou fuja da luta | o fundo tem que sumir junto; se ficar no overworld, faltou o `Step` |
 
 ---
 
@@ -539,7 +641,11 @@ Esse é o default — uma coluna à esquerda, centralizada verticalmente conform
 | Obstáculos invisíveis | `o_enc_box_solid` nasce com `visible = false` e sem sprite |
 | Obstáculos da rodada anterior continuam lá | faltou destruí-los no Destroy do turn_object |
 | Dois inimigos iguais atacam como um só | comportamento esperado — use `buff`, ou `allow_same_turns = true` |
-| O fundo customizado não aparece | depth menor que `DEPTH_ENCOUNTER.BACKGROUND`, ou `bg_type` continua `GRID` |
+| O fundo customizado não aparece | `bg_type` continua `GRID`, ou o objeto não foi criado no `ev_init` |
+| O fundo aparece **na frente** dos inimigos | depth menor que `DEPTH_ENCOUNTER.BACKGROUND` — em GameMaker, maior é mais ao fundo |
+| O fundo fica deslocado quando a câmera não está na origem | faltou somar `guipos_x()` / `guipos_y()` no desenho |
+| O fundo continua na tela depois da batalha | faltou o `Step` que se destrói quando `o_enc` some |
+| As estrelas (ou outro enfeite) tremem de lugar | você sorteia a posição dentro do `Draw`; sorteie no `Create` e guarde num array |
 | A batalha nunca acaba | `win_condition` nunca devolve `true` |
 
 ---

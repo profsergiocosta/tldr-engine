@@ -19,3 +19,13 @@ switch pattern {                    // lembre: pattern É o humor do gato
         o_enc.mybox.height = 75
         break
 }
+
+// Other_12.gml
+o_enc.mybox.sprite_index = spr_ex_box_complex        // a moldura
+o_enc.mybox.mask_index   = spr_ex_box_complex_mask   // as paredes (colisão)
+o_enc.mybox.sprite_back  = spr_ex_box_complex_back_2x // o fundo interno
+
+with o_enc.mybox {
+    sprite_w = sprite_get_width(sprite_index)
+    sprite_h = sprite_get_height(sprite_index)
+}
